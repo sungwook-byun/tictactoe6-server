@@ -3,7 +3,7 @@ const { v4: uuidv4 } = require('uuid');
 module.exports = function(server) {
 
     const io = require('socket.io')(server, { 
-        transports: ['websocktet']
+        transports: ['websocket']
     });
 
 
@@ -29,6 +29,7 @@ module.exports = function(server) {
         }
         else {
             var roomId = uuidv4();
+            
             socket.join(roomId);
             socket.emit('createRoom', { roomId: roomId});
             rooms.push(roomId);
@@ -36,7 +37,7 @@ module.exports = function(server) {
         }
 
         // 특정 socket(클라이언트)이 방을 나갔을 때 처리
-        socket.on('leaveRoome', function(data) {
+        socket.on('leaveRoom', function(data) {
             var roomId = data.roomId;
             socket.leave(roomId);
             socket.emit('exitRoom');
@@ -57,8 +58,14 @@ module.exports = function(server) {
             var roomId = playerInfo.roomId;
             var blockIndex = playerInfo.blockIndex;
 
-            console.log('Player action on room : ',roomId, 'Block index : ',blockIndex);
-            socket.to(roomId).emit('doOpponent', {blockIndex : blockIndex});
+            console.log('Player action in room ', roomId, 'Block index ', blockIndex);
+
+            // 본인 제외, 상대방에게만 이벤트 전달
+            socket.to(roomId).emit('doOpponent', { blockIndex: blockIndex });
+        });
+
+        socket.on("disconnect", (reason) => {
+            console.log('Disconnected: ' + socket.id + 'Reason' + reason);
         });
     });
 
